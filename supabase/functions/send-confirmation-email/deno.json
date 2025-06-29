@@ -1,0 +1,8 @@
+{
+  "compilerOptions": {
+    "lib": ["deno.ns", "dom"]
+  },
+  "imports": {
+    "serve": "https://deno.land/std@0.203.0/http/server.ts"
+  }
+}
