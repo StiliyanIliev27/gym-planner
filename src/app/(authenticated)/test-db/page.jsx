@@ -5,6 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/auth/useAuthStore';
+import { useWorkoutStore } from '@/stores/workout/useWorkoutStore';
+import { useProgressStore } from '@/stores/progress/useProgressStore';
 import { 
   testDatabaseConnection,
   getUserProfile,
@@ -14,9 +16,12 @@ import {
 } from '@/lib/services';
 
 export default function TestDatabasePage() {
-  const { user } = useAuthStore();
+  const { user, profile, goals, loadUserProfile } = useAuthStore();
+  const { workouts, loadUserWorkouts, workoutsLoading } = useWorkoutStore();
+  const { measurements, loadUserMeasurements, measurementsLoading } = useProgressStore();
   const [results, setResults] = useState({});
   const [loading, setLoading] = useState(false);
+  const [storeTests, setStoreTests] = useState({});
 
   const runTest = async (testName, testFunction) => {
     setLoading(true);
@@ -86,6 +91,38 @@ export default function TestDatabasePage() {
     }
   };
 
+  const testStores = async () => {
+    if (!user?.id) {
+      setStoreTests({ error: 'No user logged in' });
+      return;
+    }
+
+    setStoreTests({ status: 'loading' });
+    
+    try {
+      // Test Auth Store
+      await loadUserProfile(user.id);
+      
+      // Test Workout Store  
+      await loadUserWorkouts(user.id, 30);
+      
+      // Test Progress Store
+      await loadUserMeasurements(user.id, 90);
+      
+      setStoreTests({ 
+        status: 'success',
+        authStore: { profile, goals },
+        workoutStore: { workouts, workoutsLoading },
+        progressStore: { measurements, measurementsLoading }
+      });
+    } catch (error) {
+      setStoreTests({ 
+        status: 'error', 
+        error: error.message 
+      });
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch(status) {
       case 'loading': return <Badge variant="secondary">Loading...</Badge>;
@@ -109,8 +146,18 @@ export default function TestDatabasePage() {
           Run All Tests
         </Button>
         <Button 
+          onClick={testStores} 
+          disabled={loading || !user}
+          variant="secondary"
+        >
+          Test Stores
+        </Button>
+        <Button 
           variant="outline" 
-          onClick={() => setResults({})}
+          onClick={() => {
+            setResults({});
+            setStoreTests({});
+          }}
           disabled={loading}
         >
           Clear Results
@@ -126,6 +173,71 @@ export default function TestDatabasePage() {
             <p><strong>ID:</strong> {user.id}</p>
             <p><strong>Email:</strong> {user.email}</p>
             <p><strong>Created:</strong> {new Date(user.created_at).toLocaleString()}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Store Integration Tests */}
+      {storeTests.status && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              Store Integration Tests 
+              {storeTests.status === 'loading' && getStatusBadge('loading')}
+              {storeTests.status === 'success' && getStatusBadge('success')}
+              {storeTests.status === 'error' && getStatusBadge('error')}
+            </CardTitle>
+            <CardDescription>
+              Tests real data loading into Auth, Workout, and Progress stores
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {storeTests.status === 'success' && (
+              <div className="space-y-4">
+                <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                  <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2">
+                    Auth Store Data
+                  </h4>
+                  <p className="text-sm">Profile: {storeTests.authStore?.profile ? '✓ Loaded' : '✗ Empty'}</p>
+                  <p className="text-sm">Goals: {storeTests.authStore?.goals?.length || 0} items</p>
+                </div>
+                
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                  <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                    Workout Store Data
+                  </h4>
+                  <p className="text-sm">Workouts: {storeTests.workoutStore?.workouts?.length || 0} items</p>
+                  <p className="text-sm">Loading: {storeTests.workoutStore?.workoutsLoading ? 'Yes' : 'No'}</p>
+                </div>
+                
+                <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                  <h4 className="font-semibold text-purple-800 dark:text-purple-200 mb-2">
+                    Progress Store Data
+                  </h4>
+                  <p className="text-sm">Measurements: {storeTests.progressStore?.measurements?.length || 0} items</p>
+                  <p className="text-sm">Loading: {storeTests.progressStore?.measurementsLoading ? 'Yes' : 'No'}</p>
+                </div>
+              </div>
+            )}
+            
+            {storeTests.status === 'error' && (
+              <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg">
+                <h4 className="font-semibold text-red-800 dark:text-red-200 mb-2">
+                  Store Test Error
+                </h4>
+                <p className="text-sm text-red-700 dark:text-red-300">
+                  {storeTests.error}
+                </p>
+              </div>
+            )}
+            
+            {storeTests.error && !storeTests.status && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg">
+                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                  {storeTests.error}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -187,9 +299,27 @@ export default function TestDatabasePage() {
         <ul className="text-sm text-muted-foreground space-y-1">
           <li>• This page is only available in authenticated routes</li>
           <li>• All tests use the Supabase services we just created</li>
+          <li>• "Test Stores" button tests Phase 3 store integration</li>
           <li>• Green = Success, Red = Error, Gray = Not run yet</li>
           <li>• Check browser console for detailed error logs</li>
         </ul>
+        
+        <div className="mt-4 pt-4 border-t">
+          <h4 className="font-semibold mb-2 text-green-600">✅ Phase 2 Complete: API Layer & Services</h4>
+          <p className="text-sm text-muted-foreground">
+            All core Supabase services implemented and tested
+          </p>
+          
+          <h4 className="font-semibold mb-2 mt-3 text-blue-600">🚀 Phase 3 Complete: Store Integration</h4>
+          <p className="text-sm text-muted-foreground">
+            Enhanced Auth Store, Real Workout Store, and Progress Store created
+          </p>
+          
+          <h4 className="font-semibold mb-2 mt-3 text-orange-600">📋 Next: Phase 4 - Component Data Integration</h4>
+          <p className="text-sm text-muted-foreground">
+            Replace mock data in dashboard and other components
+          </p>
+        </div>
       </div>
     </div>
   );
