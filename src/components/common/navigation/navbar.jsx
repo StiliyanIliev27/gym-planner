@@ -21,7 +21,12 @@ export default function Navbar() {
             <Link href="/auth/login">Get started</Link>
           </Button>
         ) : (
-          <SignOutButton />
+          <>
+            <Button variant="outline" size="sm">
+              <Link href="/test-db">Test DB</Link>
+            </Button>
+            <SignOutButton />
+          </>
         )}
         <ModeToggle />
       </div>
