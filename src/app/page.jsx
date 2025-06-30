@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { useAuthGuard } from "@/hooks/auth/useAuthGuard";
 
 export default function Home() {
   const ready = useAuthGuard();
