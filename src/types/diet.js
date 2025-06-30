@@ -25,11 +25,7 @@ export const MealSchema = {
   id: 'string',
   name: 'string',
   meal_type: 'string', // breakfast, lunch, dinner, snack
-  foods: {
-    food_id: 'string',
-    quantity: 'number',
-    unit: 'string'
-  }[],
+  foods: 'array', // Array of { food_id: string, quantity: number, unit: string }
   total_calories: 'number',
   total_macros: {
     protein: 'number',
