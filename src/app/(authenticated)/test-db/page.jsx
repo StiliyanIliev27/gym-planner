@@ -14,6 +14,8 @@ import {
   getEquipment,
   getFoodCategories
 } from '@/lib/services';
+import { toast } from 'sonner';
+import { supabase } from '@/lib/supabase/client';
 
 export default function TestDatabasePage() {
   const { user, profile, goals, loadUserProfile } = useAuthStore();
@@ -123,6 +125,51 @@ export default function TestDatabasePage() {
     }
   };
 
+  const checkAndFixProfile = async () => {
+    if (!user?.id) {
+      toast.error("No user logged in");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Check if profile exists
+      const { data: profile, error: profileError } = await getUserProfile(user.id);
+      
+      if (profileError || !profile) {
+        console.log("Profile not found, creating one...");
+        
+        // Create missing profile
+        const { data: createdProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert({
+            id: user.id,
+            first_name: user.user_metadata?.firstName || user.email?.split('@')[0] || 'User',
+            last_name: user.user_metadata?.lastName || '',
+            avatar_url: '',
+            is_verified: true, // Since they're already logged in
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error("Error creating profile:", createError);
+          toast.error("Failed to create profile: " + createError.message);
+        } else {
+          console.log("Profile created successfully:", createdProfile);
+          toast.success("Profile created successfully!");
+        }
+      } else {
+        console.log("Profile exists:", profile);
+        toast.success("Profile already exists - no action needed");
+      }
+    } catch (error) {
+      console.error("Error checking profile:", error);
+      toast.error("Error: " + error.message);
+    }
+    setLoading(false);
+  };
+
   const getStatusBadge = (status) => {
     switch(status) {
       case 'loading': return <Badge variant="secondary">Loading...</Badge>;
@@ -141,7 +188,7 @@ export default function TestDatabasePage() {
         </p>
       </div>
 
-      <div className="flex gap-4 mb-6">
+      <div className="flex gap-4 mb-6 flex-wrap">
         <Button onClick={runAllTests} disabled={loading}>
           Run All Tests
         </Button>
@@ -151,6 +198,14 @@ export default function TestDatabasePage() {
           variant="secondary"
         >
           Test Stores
+        </Button>
+        <Button 
+          onClick={checkAndFixProfile} 
+          disabled={loading || !user}
+          variant="default"
+          className="bg-orange-500 hover:bg-orange-600"
+        >
+          Check/Fix Profile
         </Button>
         <Button 
           variant="outline" 
