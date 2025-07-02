@@ -1,155 +1,123 @@
 "use client";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { 
-  Play,
-  Plus,
-  TrendingUp,
-  Target,
+  Dumbbell, 
+  Plus, 
+  Play, 
   Calendar,
-  Timer,
-  Utensils,
-  BarChart3,
-  Settings,
-  Award
-} from "lucide-react";
-import Link from "next/link";
+  Zap,
+  Brain
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useWorkoutStore } from '@/stores/workout/useWorkoutStore';
 
 export default function QuickActions() {
-  const quickActions = [
+  const router = useRouter();
+  const { workouts } = useWorkoutStore();
+  
+  // Find most recent planned workout
+  const nextWorkout = workouts?.find(w => w.status === 'planned') || null;
+  
+  // Count pending workouts
+  const pendingWorkouts = workouts?.filter(w => w.status === 'planned')?.length || 0;
+
+  const actions = [
     {
-      icon: Play,
-      title: "Start Workout",
-      description: "Begin today's session",
-      href: "/workout-builder",
+      title: "Workout Builder",
+      description: "Create your next workout",
+      icon: Brain,
+      action: () => router.push('/workout-builder'),
       variant: "default",
-      badge: "Ready",
-      color: "bg-green-500"
+      featured: true
     },
     {
-      icon: Plus,
-      title: "Log Activity",
-      description: "Record completed exercise",
-      href: "#",
-      variant: "outline",
-      badge: null,
-      color: "bg-blue-500"
+      title: "My Workouts",
+      description: "View and manage workouts",
+      icon: Play,
+      action: () => router.push('/my-workouts'),
+      variant: "secondary"
     },
     {
-      icon: TrendingUp,
-      title: "Update Progress",
-      description: "Log weight & measurements",
-      href: "#",
-      variant: "outline",
-      badge: "Due",
-      color: "bg-purple-500"
-    },
-    {
-      icon: Target,
-      title: "Set Goals",
-      description: "Define new targets",
-      href: "#",
-      variant: "outline",
-      badge: null,
-      color: "bg-orange-500"
-    },
-    {
+      title: "Track Progress",
+      description: "Log your measurements",
       icon: Calendar,
-      title: "Plan Week",
-      description: "Schedule workouts",
-      href: "#",
-      variant: "outline",
-      badge: null,
-      color: "bg-indigo-500"
-    },
-    {
-      icon: Utensils,
-      title: "Meal Planning",
-      description: "Design nutrition plan",
-      href: "/diet-builder",
-      variant: "outline",
-      badge: "New",
-      color: "bg-emerald-500"
-    },
-    {
-      icon: BarChart3,
-      title: "View Analytics",
-      description: "Detailed progress report",
-      href: "#",
-      variant: "outline",
-      badge: null,
-      color: "bg-pink-500"
-    },
-    {
-      icon: Award,
-      title: "Achievements",
-      description: "View milestones",
-      href: "#",
-      variant: "outline",
-      badge: "3 New",
-      color: "bg-yellow-500"
+      action: () => router.push('/progress'),
+      variant: "outline"
     }
   ];
 
-  // Show only first 6 actions on mobile, all on desktop
-  const actionsToShow = quickActions.slice(0, 6);
-
   return (
     <Card>
-      <CardContent className="p-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {actionsToShow.map((action, index) => {
-            const IconComponent = action.icon;
-            const content = (
-              <Card className="group hover:shadow-md transition-all duration-200 cursor-pointer border border-border/50 hover:border-primary/20 hover:scale-[1.02]">
-                <CardContent className="p-4">
-                  <div className="text-center space-y-2">
-                    <div className="relative">
-                      <div className={`p-2 ${action.color} rounded-lg mx-auto w-fit group-hover:scale-110 transition-transform`}>
-                        <IconComponent className="h-5 w-5 text-white" />
-                      </div>
-                      {action.badge && (
-                        <Badge 
-                          variant="secondary" 
-                          className="absolute -top-1 -right-1 text-xs px-1.5 py-0.5 h-auto"
-                        >
-                          {action.badge}
-                        </Badge>
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-sm group-hover:text-primary transition-colors">
-                        {action.title}
-                      </h3>
-                      <p className="text-xs text-muted-foreground">
-                        {action.description}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-
-            return action.href.startsWith('/') ? (
-              <Link key={index} href={action.href} className="block">
-                {content}
-              </Link>
-            ) : (
-              <div key={index} onClick={() => console.log(`Clicked: ${action.title}`)}>
-                {content}
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Zap className="h-5 w-5" />
+          Quick Actions
+          {pendingWorkouts > 0 && (
+            <Badge variant="secondary" className="ml-auto">
+              {pendingWorkouts} planned
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {/* Next Workout Alert */}
+        {nextWorkout && (
+          <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">{nextWorkout.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(nextWorkout.workout_date).toLocaleDateString()}
+                </p>
               </div>
+              <Badge variant="outline" className="text-xs">
+                Planned
+              </Badge>
+            </div>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        <div className="grid gap-2">
+          {actions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Button
+                key={action.title}
+                variant={action.variant}
+                onClick={action.action}
+                className={`justify-start h-auto p-3 ${action.featured ? 'border-primary/50' : ''}`}
+              >
+                <div className="flex items-center gap-3 w-full">
+                  <div className={`p-2 rounded-lg ${
+                    action.featured 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'bg-muted'
+                  }`}>
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-medium text-sm">{action.title}</div>
+                    <div className="text-xs text-muted-foreground">{action.description}</div>
+                  </div>
+                </div>
+              </Button>
             );
           })}
         </div>
 
-        {/* Show More Actions Button */}
-        <div className="flex justify-center mt-4">
-          <Button variant="ghost" size="sm" className="text-xs">
-            <Settings className="h-3 w-3 mr-1" />
-            Customize Actions
-          </Button>
-        </div>
+        {/* Add Workout Button */}
+        <Button 
+          variant="ghost" 
+          className="w-full gap-2 h-8 text-xs"
+          onClick={() => router.push('/workout-builder')}
+        >
+          <Plus className="h-3 w-3" />
+          Add Workout
+        </Button>
       </CardContent>
     </Card>
   );

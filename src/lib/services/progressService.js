@@ -422,7 +422,7 @@ export const getProgressSummary = async (userId, days = 30) => {
     // Get workout stats from another service (assuming it exists)
     const { data: workoutStats } = await supabase
       .from('user_workouts')
-      .select('id, status, workout_date, duration_minutes')
+              .select('id, status, workout_date, total_duration_minutes')
       .eq('user_id', userId)
       .gte('workout_date', startDateStr)
       .eq('status', 'completed');
@@ -447,8 +447,8 @@ export const getProgressSummary = async (userId, days = 30) => {
       },
       workouts: {
         completed: workoutStats?.length || 0,
-        totalDuration: workoutStats?.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) || 0,
-        averageDuration: workoutStats?.length > 0 ? Math.round(workoutStats.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / workoutStats.length) : 0
+              totalDuration: workoutStats?.reduce((sum, w) => sum + (w.total_duration_minutes || 0), 0) || 0,
+      averageDuration: workoutStats?.length > 0 ? Math.round(workoutStats.reduce((sum, w) => sum + (w.total_duration_minutes || 0), 0) / workoutStats.length) : 0
       }
     };
 

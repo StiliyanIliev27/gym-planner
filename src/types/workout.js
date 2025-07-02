@@ -7,12 +7,15 @@ export const ExerciseSchema = {
   id: 'string',
   name: 'string',
   description: 'string',
-  muscle_groups: 'string[]',
-  equipment: 'string[]',
-  difficulty: 'string',
-  instructions: 'string[]',
-  tips: 'string[]',
-  image_url: 'string'
+  primary_muscle_groups: 'string[]',
+  secondary_muscle_groups: 'string[]',
+  equipment_needed: 'string[]',
+  difficulty_level: 'string',
+  exercise_type: 'string',
+  instructions: 'string',
+  tips: 'string',
+  demo_video_url: 'string',
+  demo_image_url: 'string'
 };
 
 /**
@@ -20,12 +23,14 @@ export const ExerciseSchema = {
  */
 export const WorkoutSetSchema = {
   id: 'string',
-  exercise_id: 'string',
-  sets: 'number',
+  workout_exercise_id: 'string',
+  set_number: 'number',
   reps: 'number',
-  weight: 'number',
-  rest_time: 'number',
-  notes: 'string'
+  weight_kg: 'number',
+  duration_seconds: 'number',
+  rest_duration_seconds: 'number',
+  rpe: 'number',
+  is_completed: 'boolean'
 };
 
 /**
@@ -33,13 +38,14 @@ export const WorkoutSetSchema = {
  */
 export const WorkoutSchema = {
   id: 'string',
+  user_id: 'string',
   name: 'string',
-  description: 'string',
-  duration: 'number',
-  difficulty: 'string',
-  workout_type: 'string',
-  muscle_groups: 'string[]',
-  sets: 'WorkoutSet[]',
+  workout_date: 'string',
+  total_duration_minutes: 'number',
+  status: 'string',
+  target_muscle_groups: 'string[]',
+  notes: 'string',
+  workout_exercises: 'WorkoutExercise[]',
   created_at: 'string',
   updated_at: 'string'
 };
