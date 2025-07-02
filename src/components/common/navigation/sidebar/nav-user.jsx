@@ -34,6 +34,7 @@ import {
 
 import { signOutAsync } from "@/lib/supabase/auth"
 import { useRouter } from "next/navigation"
+import { SessionStatusIndicator } from "@/components/common/auth/SessionStatusIndicator"
 
 export function NavUser({
   user
@@ -61,7 +62,10 @@ export function NavUser({
                 </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
+                <div className="flex items-center justify-between">
+                  <span className="truncate font-medium">{user.name}</span>
+                  <SessionStatusIndicator variant="minimal" />
+                </div>
                 <span className="truncate text-xs">{user.email}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
@@ -81,7 +85,10 @@ export function NavUser({
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
+                  <div className="flex items-center justify-between">
+                    <span className="truncate font-medium">{user.name}</span>
+                    <SessionStatusIndicator variant="minimal" />
+                  </div>
                   <span className="truncate text-xs">{user.email}</span>
                 </div>
               </div>
