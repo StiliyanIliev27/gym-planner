@@ -22,8 +22,11 @@ export const getUserWorkouts = async (userId, startDate, endDate) => {
           *,
           exercises (
             name,
-            muscle_group,
-            equipment_needed
+            primary_muscle_groups,
+            equipment_needed,
+            form_cues,
+            common_mistakes,
+            ai_difficulty_score
           ),
           exercise_sets (*)
         )
@@ -60,10 +63,21 @@ export const getWorkoutById = async (workoutId) => {
           *,
           exercises (
             name,
-            muscle_group,
+            primary_muscle_groups,
+            secondary_muscle_groups,
             equipment_needed,
             instructions,
-            media_url
+            demo_video_url,
+            demo_image_url,
+            video_urls,
+            image_urls,
+            form_cues,
+            common_mistakes,
+            progressions,
+            regressions,
+            ai_difficulty_score,
+            difficulty_level,
+            exercise_type
           ),
           exercise_sets (*)
         )
@@ -185,7 +199,7 @@ export const addExerciseToWorkout = async (workoutId, exerciseId, exerciseData =
         *,
         exercises (
           name,
-          muscle_group,
+          primary_muscle_groups,
           equipment_needed
         )
       `)
@@ -322,16 +336,16 @@ export const getWorkoutTemplates = async (userId) => {
       .from('workout_templates')
       .select(`
         *,
-        template_exercises (
+        workout_template_exercises (
           *,
           exercises (
             name,
-            muscle_group,
+            primary_muscle_groups,
             equipment_needed
           )
         )
       `)
-      .eq('user_id', userId)
+      .eq('created_by', userId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -474,12 +488,12 @@ export const getWorkoutStats = async (userId, days = 30) => {
         id,
         workout_date,
         status,
-        duration_minutes,
-        workout_type,
+        total_duration_minutes,
+        workout_tags,
         workout_exercises (
           id,
           exercises (
-            muscle_group
+            primary_muscle_groups
           )
         )
       `)
@@ -495,9 +509,9 @@ export const getWorkoutStats = async (userId, days = 30) => {
     // Calculate statistics
     const stats = {
       totalWorkouts: data.length,
-      totalDuration: data.reduce((sum, w) => sum + (w.duration_minutes || 0), 0),
-      averageDuration: data.length > 0 ? Math.round(data.reduce((sum, w) => sum + (w.duration_minutes || 0), 0) / data.length) : 0,
-      workoutsByType: {},
+      totalDuration: data.reduce((sum, w) => sum + (w.total_duration_minutes || 0), 0),
+      averageDuration: data.length > 0 ? Math.round(data.reduce((sum, w) => sum + (w.total_duration_minutes || 0), 0) / data.length) : 0,
+      workoutsByTags: {},
       muscleGroupsWorked: {},
       workoutsThisWeek: 0,
       workoutsThisMonth: 0
@@ -510,9 +524,11 @@ export const getWorkoutStats = async (userId, days = 30) => {
     data.forEach(workout => {
       const workoutDate = new Date(workout.workout_date);
       
-      // Count by type
-      if (workout.workout_type) {
-        stats.workoutsByType[workout.workout_type] = (stats.workoutsByType[workout.workout_type] || 0) + 1;
+      // Count by tags
+      if (workout.workout_tags && workout.workout_tags.length > 0) {
+        workout.workout_tags.forEach(tag => {
+          stats.workoutsByTags[tag] = (stats.workoutsByTags[tag] || 0) + 1;
+        });
       }
 
       // Count this week/month
@@ -521,8 +537,10 @@ export const getWorkoutStats = async (userId, days = 30) => {
 
       // Count muscle groups
       workout.workout_exercises?.forEach(we => {
-        if (we.exercises?.muscle_group) {
-          stats.muscleGroupsWorked[we.exercises.muscle_group] = (stats.muscleGroupsWorked[we.exercises.muscle_group] || 0) + 1;
+        if (we.exercises?.primary_muscle_groups) {
+          we.exercises.primary_muscle_groups.forEach(group => {
+            stats.muscleGroupsWorked[group] = (stats.muscleGroupsWorked[group] || 0) + 1;
+          });
         }
       });
     });

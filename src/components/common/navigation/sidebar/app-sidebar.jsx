@@ -45,6 +45,13 @@ const data = {
       url: "/dashboard",
       icon: LayoutDashboard,
       isActive: true,
+      isDirectLink: true,
+    },
+    {
+      title: "Profile",
+      url: "/profile",
+      icon: User,
+      isDirectLink: true,
     },
     {
       title: "Workouts",
@@ -57,7 +64,7 @@ const data = {
         },
         {
           title: "My Workouts",
-          url: "/workouts",
+          url: "/my-workouts",
         },
         {
           title: "Exercise Library",

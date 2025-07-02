@@ -387,7 +387,17 @@ export const useWorkoutStore = create(devtools((set, get) => ({
   setCurrentWorkout: (workout) => set({ currentWorkout: workout }),
   setIsGenerating: (isGenerating) => set({ isGenerating }),
   setCurrentPhase: (phase) => set({ currentPhase: phase }),
-  setBuilderWorkout: (workout) => set({ builderWorkout: workout }),
+  setBuilderWorkout: (workout) => {
+    if (typeof workout === 'function') {
+      // Support functional updates like React useState
+      const currentBuilderWorkout = get().builderWorkout;
+      const newWorkout = workout(currentBuilderWorkout);
+      set({ builderWorkout: newWorkout });
+    } else {
+      // Direct value assignment
+      set({ builderWorkout: workout });
+    }
+  },
   
   updateAssessmentData: (section, data) => set((state) => ({
     assessmentData: {
