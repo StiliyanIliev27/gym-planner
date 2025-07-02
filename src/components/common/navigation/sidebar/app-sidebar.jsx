@@ -19,6 +19,7 @@ import { NavMain } from "@/components/common/navigation/sidebar/nav-main"
 import { NavProjects } from "@/components/common/navigation/sidebar/nav-projects"
 import { NavUser } from "@/components/common/navigation/sidebar/nav-user"
 import { TeamSwitcher } from "@/components/common/navigation/team-switcher"
+
 import {
   Sidebar,
   SidebarContent,
