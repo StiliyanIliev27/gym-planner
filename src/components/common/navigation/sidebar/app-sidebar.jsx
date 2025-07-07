@@ -49,12 +49,6 @@ const data = {
       isDirectLink: true,
     },
     {
-      title: "Profile",
-      url: "/profile",
-      icon: User,
-      isDirectLink: true,
-    },
-    {
       title: "Workouts",
       url: "#",
       icon: Dumbbell,
