@@ -56,13 +56,24 @@ import {
   TrendingUp,
   Send,
   Bot,
-  User
+  User,
+  ChevronDown,
+  ChevronUp,
+  Info,
+  Zap,
+  AlertTriangle,
+  BookOpen,
+  Star,
+  Activity,
+  Globe,
+  Lock,
+  UserCheck
 } from "lucide-react";
 
 // Import stores and services
 import { useAuthStore } from "@/stores/auth/useAuthStore";
 import { useWorkoutStore } from "@/stores/workout/useWorkoutStore";
-import { getExercises } from "@/lib/services/exerciseService";
+import { getExercises, createExercise } from "@/lib/services/exerciseService";
 import { addExerciseToWorkout, removeExerciseFromWorkout } from "@/lib/services/workoutService";
 import AIWorkoutHelper from './ai-workout-helper';
 import WorkoutCoverUpload from './workout-cover-upload';
@@ -93,9 +104,20 @@ export default function WorkoutDetail({ workoutId }) {
   const [customExercise, setCustomExercise] = useState({
     name: '',
     description: '',
+    instructions: '',
     primary_muscle_groups: [],
-    equipment_needed: '',
-    instructions: ''
+    secondary_muscle_groups: [],
+    equipment_needed: [],
+    exercise_type: '',
+    difficulty_level: '',
+    movement_pattern: '',
+    tips: '',
+    form_cues: [],
+    common_mistakes: [],
+    demo_video_url: '',
+    is_compound: false,
+    is_bilateral: true,
+    is_public: false
   });
   const [updatedExercises, setUpdatedExercises] = useState({});
   const [chatMessages, setChatMessages] = useState([
@@ -107,6 +129,7 @@ export default function WorkoutDetail({ workoutId }) {
     }
   ]);
   const [newMessage, setNewMessage] = useState("");
+  const [expandedExercises, setExpandedExercises] = useState(new Set());
 
   // Load workout data
   useEffect(() => {
@@ -211,27 +234,54 @@ export default function WorkoutDetail({ workoutId }) {
     }
 
     try {
-      // Mock custom exercise creation - in real app would call API
-      const mockCustomExercise = {
-        id: `custom_${Date.now()}`,
+      const exerciseData = {
         name: customExercise.name,
         description: customExercise.description,
-        primary_muscle_groups: customExercise.primary_muscle_groups,
-        equipment_needed: customExercise.equipment_needed,
         instructions: customExercise.instructions,
-        is_custom: true
+        primary_muscle_groups: customExercise.primary_muscle_groups,
+        secondary_muscle_groups: customExercise.secondary_muscle_groups,
+        equipment_needed: customExercise.equipment_needed,
+        exercise_type: customExercise.exercise_type,
+        difficulty_level: customExercise.difficulty_level,
+        movement_pattern: customExercise.movement_pattern,
+        tips: customExercise.tips,
+        form_cues: customExercise.form_cues,
+        common_mistakes: customExercise.common_mistakes,
+        demo_video_url: customExercise.demo_video_url,
+        is_compound: customExercise.is_compound,
+        is_bilateral: customExercise.is_bilateral
       };
 
-      await handleAddExercise(mockCustomExercise);
-      setShowCustomExerciseDialog(false);
-      setCustomExercise({
-        name: '',
-        description: '',
-        primary_muscle_groups: [],
-        equipment_needed: '',
-        instructions: ''
-      });
-      toast.success("Custom exercise created and added!");
+      const { data, error } = await createExercise(user.id, exerciseData, customExercise.is_public);
+
+      if (error) {
+        toast.error("Error creating custom exercise: " + error.message);
+        return;
+      }
+
+      if (data) {
+        await handleAddExercise(data);
+        setShowCustomExerciseDialog(false);
+        setCustomExercise({
+          name: '',
+          description: '',
+          instructions: '',
+          primary_muscle_groups: [],
+          secondary_muscle_groups: [],
+          equipment_needed: [],
+          exercise_type: '',
+          difficulty_level: '',
+          movement_pattern: '',
+          tips: '',
+          form_cues: [],
+          common_mistakes: [],
+          demo_video_url: '',
+          is_compound: false,
+          is_bilateral: true,
+          is_public: false
+        });
+        toast.success("Custom exercise created and added!");
+      }
     } catch (error) {
       toast.error("Error creating custom exercise: " + error.message);
     }
@@ -368,6 +418,182 @@ export default function WorkoutDetail({ workoutId }) {
     }
     
     setShowCoverUpload(false);
+  };
+
+  const toggleExerciseExpansion = (exerciseId) => {
+    setExpandedExercises(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(exerciseId)) {
+        newSet.delete(exerciseId);
+      } else {
+        newSet.add(exerciseId);
+      }
+      return newSet;
+    });
+  };
+
+  const renderExerciseDetails = (exercise) => {
+    if (!exercise) return null;
+
+    // Function to extract YouTube video ID from URL
+    const getYouTubeVideoId = (url) => {
+      if (!url) return null;
+      const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/);
+      return match ? match[1] : null;
+    };
+
+    const videoId = getYouTubeVideoId(exercise.demo_video_url);
+
+    return (
+      <div className="mt-2 pt-2 border-t bg-muted/20 rounded-md p-3">
+        <div className="flex gap-4">
+          {/* Video Player - Left Side */}
+          {videoId && (
+            <div className="flex-shrink-0 w-96">
+              <Label className="text-sm font-medium text-muted-foreground mb-2 block">Demo Video</Label>
+              <div className="space-y-2">
+                {/* YouTube Embed Player */}
+                <div className="relative aspect-video w-full bg-black rounded-lg overflow-hidden">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${videoId}?modestbranding=1&rel=0&showinfo=0`}
+                    title="Exercise Demo"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="w-full h-full"
+                  />
+                </div>
+                
+                {/* Video Info Below */}
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Watch for:</span>
+                    <span>Proper form and technique</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Focus on:</span>
+                    <span>Movement speed and control</span>
+                  </div>
+                  {exercise.primary_muscle_groups && exercise.primary_muscle_groups.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Targets:</span>
+                      <span>{exercise.primary_muscle_groups.join(', ')}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Exercise Information - Right Side */}
+          <div className="flex-1 space-y-2">
+            {/* First Row: Target Muscles and Form Points */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Target Muscles */}
+              {exercise.primary_muscle_groups && exercise.primary_muscle_groups.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Target Muscles</Label>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {exercise.primary_muscle_groups.map((muscle, index) => (
+                      <Badge key={index} variant="default" className="text-xs">
+                        {muscle}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Form Points */}
+              {exercise.form_cues && exercise.form_cues.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                    <Activity className="h-4 w-4" />
+                    Form Points
+                  </Label>
+                  <ul className="text-sm mt-1 space-y-1 p-1 rounded-md">
+                    {exercise.form_cues.slice(0, 2).map((cue, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-green-600 mt-1 font-bold text-xs">•</span>
+                        <span className="text-green-700 dark:text-green-300 text-xs">{cue}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Second Row: Exercise Type & Difficulty and Avoid These */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Exercise Type & Difficulty */}
+              <div className="flex gap-4">
+                {exercise.exercise_type && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Type</Label>
+                    <p className="text-sm capitalize">{exercise.exercise_type}</p>
+                  </div>
+                )}
+                {exercise.difficulty_level && (
+                  <div>
+                    <Label className="text-sm font-medium text-muted-foreground">Difficulty</Label>
+                    <Badge variant="outline" className="text-xs">
+                      {exercise.difficulty_level}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+
+              {/* Avoid These */}
+              {exercise.common_mistakes && exercise.common_mistakes.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                    <AlertTriangle className="h-4 w-4" />
+                    Avoid These
+                  </Label>
+                  <ul className="text-sm mt-1 space-y-1 p-1 rounded-md">
+                    {exercise.common_mistakes.slice(0, 2).map((mistake, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-red-600 mt-1 font-bold text-xs">•</span>
+                        <span className="text-red-700 dark:text-red-300 text-xs">{mistake}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {/* Third Row: Equipment and Tips */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Equipment Needed */}
+              {exercise.equipment_needed && exercise.equipment_needed.length > 0 && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Equipment</Label>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {exercise.equipment_needed.map((equipment, index) => (
+                      <Badge key={index} variant="outline" className="text-xs">
+                        {equipment}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Key Tips */}
+              {exercise.tips && (
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                    <Info className="h-4 w-4" />
+                    Key Tips
+                  </Label>
+                  <p className="text-xs mt-1 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/30 p-2 rounded-md">
+                    {exercise.tips}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (operationLoading && !currentWorkout) {
@@ -681,6 +907,7 @@ export default function WorkoutDetail({ workoutId }) {
                     .sort((a, b) => (a.order_index || 0) - (b.order_index || 0))
                     .map((workoutExercise, index) => {
                       const exerciseData = getExerciseData(workoutExercise);
+                      const isExpanded = expandedExercises.has(workoutExercise.id);
                       return (
                         <div key={workoutExercise.id} className="border rounded-lg p-4 hover:bg-accent/50 transition-colors">
                           <div className="flex items-center gap-4">
@@ -689,9 +916,23 @@ export default function WorkoutDetail({ workoutId }) {
                             </div>
                             
                             <div className="flex-1">
-                              <h4 className="font-medium mb-1">
-                                {workoutExercise.exercises?.name || 'Unknown Exercise'}
-                              </h4>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-medium">
+                                  {workoutExercise.exercises?.name || 'Unknown Exercise'}
+                                </h4>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleExerciseExpansion(workoutExercise.id)}
+                                  className="h-6 w-6 p-0 hover:bg-muted"
+                                >
+                                  {isExpanded ? (
+                                    <ChevronUp className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronDown className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </div>
                               
                               {workoutExercise.exercises?.primary_muscle_groups && workoutExercise.exercises.primary_muscle_groups.length > 0 && (
                                 <Badge variant="outline" className="text-xs mb-2">
@@ -731,6 +972,9 @@ export default function WorkoutDetail({ workoutId }) {
                                   {exerciseData.notes}
                                 </p>
                               )}
+
+                              {/* Expandable Exercise Details */}
+                              {isExpanded && renderExerciseDetails(workoutExercise.exercises)}
                             </div>
                             
                             {isEditing && (
@@ -936,8 +1180,39 @@ export default function WorkoutDetail({ workoutId }) {
                       onClick={() => handleAddExercise(exercise)}
                     >
                       <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium">{exercise.name}</h4>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-medium">{exercise.name}</h4>
+                            
+                            {/* Exercise visibility indicators */}
+                            {exercise.is_system ? (
+                              <Badge variant="secondary" className="text-xs gap-1">
+                                <Star className="h-3 w-3" />
+                                System
+                              </Badge>
+                            ) : exercise.is_public ? (
+                              <Badge variant="outline" className="text-xs gap-1 text-green-600 border-green-600">
+                                <Globe className="h-3 w-3" />
+                                Public
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs gap-1 text-orange-600 border-orange-600">
+                                <Lock className="h-3 w-3" />
+                                Private
+                              </Badge>
+                            )}
+
+                            {/* Creator indicator for non-system exercises */}
+                            {!exercise.is_system && exercise.created_by_profile && (
+                              <Badge variant="outline" className="text-xs gap-1">
+                                <UserCheck className="h-3 w-3" />
+                                {exercise.created_by_profile.full_name || 
+                                 `${exercise.created_by_profile.first_name} ${exercise.created_by_profile.last_name}`.trim() ||
+                                 'User'}
+                              </Badge>
+                            )}
+                          </div>
+                          
                           {exercise.primary_muscle_groups && exercise.primary_muscle_groups.length > 0 && (
                             <div className="flex gap-1 mt-1">
                               {exercise.primary_muscle_groups.slice(0, 2).map((group, index) => (
@@ -965,49 +1240,229 @@ export default function WorkoutDetail({ workoutId }) {
 
       {/* Custom Exercise Creation Dialog */}
       <Dialog open={showCustomExerciseDialog} onOpenChange={setShowCustomExerciseDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Create Custom Exercise</DialogTitle>
-            <DialogDescription>
-              Create a personalized exercise for your workout.
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader className="pb-3">
+            <DialogTitle className="text-lg font-semibold">Create Custom Exercise</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Create a personalized exercise. Public exercises are shared with the community.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="exercise-name">Exercise Name *</Label>
-              <Input
-                id="exercise-name"
-                value={customExercise.name}
-                onChange={(e) => setCustomExercise(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="e.g., Modified Push-ups"
-              />
+          
+          <div className="space-y-3">
+            {/* Basic Information Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="exercise-name" className="text-sm font-medium">Exercise Name *</Label>
+                <Input
+                  id="exercise-name"
+                  value={customExercise.name}
+                  onChange={(e) => setCustomExercise(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., Modified Push-ups"
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="exercise-type" className="text-sm font-medium">Exercise Type</Label>
+                <Select
+                  value={customExercise.exercise_type}
+                  onValueChange={(value) => setCustomExercise(prev => ({ ...prev, exercise_type: value }))}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="strength">Strength</SelectItem>
+                    <SelectItem value="cardio">Cardio</SelectItem>
+                    <SelectItem value="flexibility">Flexibility</SelectItem>
+                    <SelectItem value="balance">Balance</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="exercise-description">Description</Label>
-              <Textarea
-                id="exercise-description"
-                value={customExercise.description}
-                onChange={(e) => setCustomExercise(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Brief description of the exercise"
-                rows={2}
-              />
+            
+            {/* Properties Row */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="difficulty-level" className="text-sm font-medium">Difficulty</Label>
+                <Select
+                  value={customExercise.difficulty_level}
+                  onValueChange={(value) => setCustomExercise(prev => ({ ...prev, difficulty_level: value }))}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Select difficulty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="movement-pattern" className="text-sm font-medium">Movement</Label>
+                <Select
+                  value={customExercise.movement_pattern}
+                  onValueChange={(value) => setCustomExercise(prev => ({ ...prev, movement_pattern: value }))}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Pattern" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="push">Push</SelectItem>
+                    <SelectItem value="pull">Pull</SelectItem>
+                    <SelectItem value="squat">Squat</SelectItem>
+                    <SelectItem value="hinge">Hinge</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="exercise-is-public" className="text-sm font-medium">Visibility</Label>
+                <Select
+                  value={customExercise.is_public ? 'true' : 'false'}
+                  onValueChange={(value) => setCustomExercise(prev => ({ ...prev, is_public: value === 'true' }))}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue placeholder="Select visibility" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Public - Share with community</SelectItem>
+                    <SelectItem value="false">Private - Only for you</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="exercise-equipment">Equipment Needed</Label>
-              <Input
-                id="exercise-equipment"
-                value={customExercise.equipment_needed}
-                onChange={(e) => setCustomExercise(prev => ({ ...prev, equipment_needed: e.target.value }))}
-                placeholder="e.g., Dumbbells, Resistance band"
-              />
+
+            {/* Muscle Groups & Equipment Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="primary-muscles" className="text-sm font-medium">Primary Muscles</Label>
+                <Input
+                  id="primary-muscles"
+                  value={customExercise.primary_muscle_groups.join(', ')}
+                  onChange={(e) => setCustomExercise(prev => ({ 
+                    ...prev, 
+                    primary_muscle_groups: e.target.value.split(',').map(m => m.trim()).filter(m => m) 
+                  }))}
+                  placeholder="e.g., Chest, Shoulders"
+                  className="h-9"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="equipment-needed" className="text-sm font-medium">Equipment</Label>
+                <Input
+                  id="equipment-needed"
+                  value={customExercise.equipment_needed.join(', ')}
+                  onChange={(e) => setCustomExercise(prev => ({ 
+                    ...prev, 
+                    equipment_needed: e.target.value.split(',').map(e => e.trim()).filter(e => e) 
+                  }))}
+                  placeholder="e.g., Dumbbells, Bench"
+                  className="h-9"
+                />
+              </div>
+            </div>
+
+            {/* Description & Instructions Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="exercise-description" className="text-sm font-medium">Description</Label>
+                <Textarea
+                  id="exercise-description"
+                  value={customExercise.description}
+                  onChange={(e) => setCustomExercise(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Brief description of the exercise"
+                  rows={2}
+                  className="resize-none"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="exercise-instructions" className="text-sm font-medium">Instructions</Label>
+                <Textarea
+                  id="exercise-instructions"
+                  value={customExercise.instructions}
+                  onChange={(e) => setCustomExercise(prev => ({ ...prev, instructions: e.target.value }))}
+                  placeholder="Step-by-step instructions"
+                  rows={2}
+                  className="resize-none"
+                />
+              </div>
+            </div>
+
+            {/* Tips & Form Cues Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="exercise-tips" className="text-sm font-medium">Tips</Label>
+                <Textarea
+                  id="exercise-tips"
+                  value={customExercise.tips}
+                  onChange={(e) => setCustomExercise(prev => ({ ...prev, tips: e.target.value }))}
+                  placeholder="Helpful tips"
+                  rows={2}
+                  className="resize-none"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="form-cues" className="text-sm font-medium">Form Cues</Label>
+                <Textarea
+                  id="form-cues"
+                  value={customExercise.form_cues.join('\n')}
+                  onChange={(e) => setCustomExercise(prev => ({ 
+                    ...prev, 
+                    form_cues: e.target.value.split('\n').filter(cue => cue.trim()) 
+                  }))}
+                  placeholder="Each cue on new line"
+                  rows={2}
+                  className="resize-none"
+                />
+              </div>
+            </div>
+
+            {/* Properties & Video Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-sm font-medium">Properties</Label>
+                <div className="flex gap-4 pt-1">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="is-compound"
+                      checked={customExercise.is_compound}
+                      onChange={(e) => setCustomExercise(prev => ({ ...prev, is_compound: e.target.checked }))}
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                    />
+                    <Label htmlFor="is-compound" className="text-sm">Compound</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="is-bilateral"
+                      checked={customExercise.is_bilateral}
+                      onChange={(e) => setCustomExercise(prev => ({ ...prev, is_bilateral: e.target.checked }))}
+                      className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                    />
+                    <Label htmlFor="is-bilateral" className="text-sm">Bilateral</Label>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="demo-video" className="text-sm font-medium">Demo Video URL</Label>
+                <Input
+                  id="demo-video"
+                  value={customExercise.demo_video_url}
+                  onChange={(e) => setCustomExercise(prev => ({ ...prev, demo_video_url: e.target.value }))}
+                  placeholder="YouTube URL (optional)"
+                  className="h-9"
+                />
+              </div>
             </div>
           </div>
-          <DialogFooter>
+          
+          <DialogFooter className="pt-4">
             <Button variant="outline" onClick={() => setShowCustomExerciseDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleCreateCustomExercise}>
-              Create & Add
+            <Button onClick={handleCreateCustomExercise} disabled={!customExercise.name.trim()}>
+              Create Exercise
             </Button>
           </DialogFooter>
         </DialogContent>

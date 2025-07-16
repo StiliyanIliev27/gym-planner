@@ -68,7 +68,6 @@ export const getWorkoutById = async (workoutId) => {
             equipment_needed,
             instructions,
             demo_video_url,
-            demo_image_url,
             video_urls,
             image_urls,
             form_cues,

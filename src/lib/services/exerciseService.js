@@ -13,6 +13,7 @@ import { supabase } from '../supabase/client';
  * @param {string} options.muscleGroup - Filter by muscle group
  * @param {string} options.equipment - Filter by equipment
  * @param {string} options.search - Search term for exercise name
+ * @param {boolean} options.includePrivate - Include user's private exercises (default: true)
  * @returns {Promise<{data: Array|null, error: Error|null, count: number|null}>}
  */
 export const getExercises = async (options = {}) => {
@@ -22,12 +23,21 @@ export const getExercises = async (options = {}) => {
       limit = 50, 
       muscleGroup, 
       equipment, 
-      search 
+      search,
+      includePrivate = true
     } = options;
 
     let query = supabase
       .from('exercises')
-      .select('*', { count: 'exact' });
+      .select(`
+        *,
+        created_by_profile:profiles!created_by(
+          id,
+          first_name,
+          last_name,
+          full_name
+        )
+      `, { count: 'exact' });
 
     // Apply filters for TEXT arrays
     if (muscleGroup && muscleGroup !== 'all') {
@@ -45,7 +55,8 @@ export const getExercises = async (options = {}) => {
     const to = from + limit - 1;
     query = query.range(from, to);
 
-    // Order by name
+    // Order by system exercises first, then by name
+    query = query.order('is_system', { ascending: false });
     query = query.order('name');
 
     const { data, error, count } = await query;
@@ -55,23 +66,9 @@ export const getExercises = async (options = {}) => {
       return { data: null, error, count: null };
     }
 
-    // Transform data to match expected format for workout builder
-    const transformedData = data?.map(exercise => ({
-      ...exercise,
-      // Transform arrays to object format for compatibility
-      muscle_groups: {
-        name: exercise.primary_muscle_groups?.[0] || 'Full Body',
-        all: exercise.primary_muscle_groups || []
-      },
-      equipment_needed: {
-        name: exercise.equipment_needed?.[0] || 'Bodyweight',
-        all: exercise.equipment_needed || []
-      }
-    }));
-
-    return { data: transformedData, error: null, count };
+    return { data, error: null, count };
   } catch (error) {
-    console.error('Unexpected error in getExercises:', error);
+    console.error('Error in getExercises:', error);
     return { data: null, error, count: null };
   }
 };
@@ -276,44 +273,153 @@ export const upsertPersonalRecord = async (userId, exerciseId, recordData) => {
 };
 
 /**
- * Creates a custom exercise
- * @param {string} userId - The user ID (for user-created exercises)
+ * Creates a new exercise (public or private)
+ * @param {string} userId - ID of the user creating the exercise
  * @param {Object} exerciseData - Exercise data
+ * @param {boolean} isPublic - Whether the exercise should be public
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
-export const createCustomExercise = async (userId, exerciseData) => {
+export const createExercise = async (userId, exerciseData, isPublic = false) => {
   try {
     const { data, error } = await supabase
       .from('exercises')
       .insert({
+        ...exerciseData,
         created_by: userId,
-        is_public: false,
-        ...exerciseData
+        is_public: isPublic,
+        is_system: false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
-      .select('*')
+      .select(`
+        *,
+        created_by_profile:profiles!created_by(
+          id,
+          first_name,
+          last_name,
+          full_name
+        )
+      `)
       .single();
 
     if (error) {
-      console.error('Error creating custom exercise:', error);
+      console.error('Error creating exercise:', error);
       return { data: null, error };
     }
 
-    // Transform data to match expected format
-    const transformedData = {
-      ...data,
-      muscle_groups: {
-        name: data.primary_muscle_groups?.[0] || 'Full Body',
-        all: data.primary_muscle_groups || []
-      },
-      equipment_needed: {
-        name: data.equipment_needed?.[0] || 'Bodyweight',
-        all: data.equipment_needed || []
-      }
-    };
-
-    return { data: transformedData, error: null };
+    return { data, error: null };
   } catch (error) {
-    console.error('Unexpected error in createCustomExercise:', error);
+    console.error('Error in createExercise:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Updates an existing exercise (only by creator)
+ * @param {string} exerciseId - ID of the exercise to update
+ * @param {string} userId - ID of the user updating the exercise
+ * @param {Object} exerciseData - Updated exercise data
+ * @returns {Promise<{data: Object|null, error: Error|null}>}
+ */
+export const updateExercise = async (exerciseId, userId, exerciseData) => {
+  try {
+    const { data, error } = await supabase
+      .from('exercises')
+      .update({
+        ...exerciseData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', exerciseId)
+      .eq('created_by', userId)
+      .select(`
+        *,
+        created_by_profile:profiles!created_by(
+          id,
+          first_name,
+          last_name,
+          full_name
+        )
+      `)
+      .single();
+
+    if (error) {
+      console.error('Error updating exercise:', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error in updateExercise:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Deletes an exercise (only by creator, not system exercises)
+ * @param {string} exerciseId - ID of the exercise to delete
+ * @param {string} userId - ID of the user deleting the exercise
+ * @returns {Promise<{data: Object|null, error: Error|null}>}
+ */
+export const deleteExercise = async (exerciseId, userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('exercises')
+      .delete()
+      .eq('id', exerciseId)
+      .eq('created_by', userId)
+      .eq('is_system', false)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error deleting exercise:', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error in deleteExercise:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Gets user's created exercises
+ * @param {string} userId - ID of the user
+ * @param {boolean} includePrivate - Whether to include private exercises
+ * @returns {Promise<{data: Array|null, error: Error|null}>}
+ */
+export const getUserCreatedExercises = async (userId, includePrivate = true) => {
+  try {
+    let query = supabase
+      .from('exercises')
+      .select(`
+        *,
+        created_by_profile:profiles!created_by(
+          id,
+          first_name,
+          last_name,
+          full_name
+        )
+      `)
+      .eq('created_by', userId);
+
+    if (!includePrivate) {
+      query = query.eq('is_public', true);
+    }
+
+    query = query.order('created_at', { ascending: false });
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching user exercises:', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error in getUserCreatedExercises:', error);
     return { data: null, error };
   }
 };

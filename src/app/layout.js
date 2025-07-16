@@ -5,6 +5,7 @@ import Navbar from "@/components/common/navigation/navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "../providers/AuthProvider";
 import { supabaseServer } from "../lib/supabase/server"; // Use server client
+import EnvironmentInitializer from "@/components/common/EnvironmentInitializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +41,7 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <EnvironmentInitializer />
         <AuthProvider session={session}>
           <ThemeProvider
             attribute="class"

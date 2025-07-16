@@ -1,4 +1,5 @@
 import { supabase } from "./client";
+import { SUPABASE_CONFIG } from "../config/environment.js";
 import generateConfirmationCode from "@/lib/utils/generateVerificationCode";
 
 export async function signInAsync(email, password) {
@@ -15,7 +16,7 @@ export async function signUpAsync({ email, password, firstName, lastName }) {
     email,
     password,
     options: {
-      emailRedirectTo: "http://localhost/skip-confirmation",
+      emailRedirectTo: "http://127.0.0.1:3000/skip-confirmation",
     },
   });
 
@@ -53,12 +54,12 @@ export async function signOutAsync() {
 async function sendConfirmationEmail(email, code) {
   try {
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/send-confirmation-email`,
+      `${SUPABASE_CONFIG.url}/functions/v1/send-confirmation-email`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${SUPABASE_CONFIG.anonKey}`,
         },
         body: JSON.stringify({ email, code }),
       }

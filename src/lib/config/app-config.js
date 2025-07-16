@@ -1,3 +1,5 @@
+import { API_CONFIG, isDevelopment, isProduction, FEATURE_FLAGS } from "./environment.js";
+
 // Application configuration constants
 export const APP_CONFIG = {
   name: "Gym Planner",
@@ -15,14 +17,16 @@ export const APP_CONFIG = {
 
   // API endpoints
   api: {
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000",
+    baseUrl: API_CONFIG.baseUrl,
   },
 
-  // Feature flags
+  // Feature flags (now managed by environment helper)
   features: {
     aiWorkoutBuilder: true,
     dietBuilder: true,
     socialFeatures: false,
+    // Include environment-specific features
+    ...FEATURE_FLAGS,
   },
 
   // UI Settings
@@ -36,6 +40,5 @@ export const APP_CONFIG = {
   }
 };
 
-// Environment-specific settings
-export const isDevelopment = process.env.NODE_ENV === "development";
-export const isProduction = process.env.NODE_ENV === "production"; 
+// Environment-specific settings (now imported from environment helper)
+export { isDevelopment, isProduction }; 

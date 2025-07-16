@@ -15,7 +15,6 @@ export const ExerciseSchema = {
   instructions: 'string',
   tips: 'string',
   demo_video_url: 'string',
-  demo_image_url: 'string'
 };
 
 /**

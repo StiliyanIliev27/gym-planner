@@ -1,6 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
+import { SUPABASE_CONFIG, validateEnvironmentConfig } from "../config/environment.js";
+
+// Validate configuration on import
+validateEnvironmentConfig();
 
 export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  SUPABASE_CONFIG.url,
+  SUPABASE_CONFIG.anonKey
 );

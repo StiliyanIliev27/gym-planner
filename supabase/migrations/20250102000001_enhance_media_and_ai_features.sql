@@ -23,7 +23,6 @@ ADD COLUMN ai_tags TEXT[]; -- AI-generated tags for better categorization
 
 -- Update existing single URL fields to be more descriptive (keep for backwards compatibility)
 COMMENT ON COLUMN exercises.demo_video_url IS 'Primary demo video (deprecated, use video_urls array)';
-COMMENT ON COLUMN exercises.demo_image_url IS 'Primary demo image (deprecated, use image_urls array)';
 
 -- Create storage buckets for media files
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)

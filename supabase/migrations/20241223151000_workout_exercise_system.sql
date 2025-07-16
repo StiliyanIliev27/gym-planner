@@ -37,7 +37,6 @@ CREATE TABLE IF NOT EXISTS exercises (
   
   -- Media and resources
   demo_video_url TEXT,
-  demo_image_url TEXT,
   tips TEXT, -- Performance tips
   
   -- Metadata
