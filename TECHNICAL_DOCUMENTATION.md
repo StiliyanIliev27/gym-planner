@@ -1,43 +1,43 @@
-# 🏋️ GymPlanner - Техническа Документация
+# 🏋️ GymPlanner - Technical Documentation
 
-## 📑 Съдържание
+## 📑 Table of Contents
 
-1. [Преглед на Проекта](#преглед-на-проекта)
-2. [Архитектура и Технологии](#архитектура-и-технологии)
-3. [Инсталация и Настройка](#инсталация-и-настройка)
-4. [Структура на Проекта](#структура-на-проекта)
-5. [База Данни](#база-данни)
-6. [API Сървиси](#api-сървиси)
+1. [Project Overview](#project-overview)
+2. [Architecture & Technologies](#architecture--technologies)
+3. [Installation & Setup](#installation--setup)
+4. [Project Structure](#project-structure)
+5. [Database](#database)
+6. [API Services](#api-services)
 7. [State Management](#state-management)
-8. [UI Компоненти](#ui-компоненти)
-9. [Автентикация и Сигурност](#автентикация-и-сигурност)
-10. [Функционалности](#функционалности)
-11. [Примери за Употреба](#примери-за-употреба)
-12. [Най-добри Практики](#най-добри-практики)
+8. [UI Components](#ui-components)
+9. [Authentication & Security](#authentication--security)
+10. [Features](#features)
+11. [Usage Examples](#usage-examples)
+12. [Best Practices](#best-practices)
 
 ---
 
-## 🎯 Преглед на Проекта
+## 🎯 Project Overview
 
-GymPlanner е модерно уеб приложение за фитнес управление, което предоставя:
+GymPlanner is a modern web application for fitness management, providing:
 
-- **Персонализирани тренировъчни планове** с AI асистент
-- **Проследяване на прогреса** с детайлни метрики
-- **Хранителен планер** за балансирано хранене
-- **Социални функции** за споделяне на постижения
-- **Мобилно-оптимизиран интерфейс** с тъмна/светла тема
+- **Personalized workout plans** with AI assistant
+- **Progress tracking** with detailed metrics
+- **Nutrition planner** for balanced meals
+- **Social features** for sharing achievements
+- **Mobile-optimized interface** with dark/light theme
 
-### Ключови Характеристики
+### Key Features
 
-- 🚀 **Бърза производителност** с Next.js 15 и Turbopack
-- 🔐 **Сигурна автентикация** със Supabase Auth
-- 🎨 **Модерен дизайн** с Tailwind CSS и shadcn/ui
-- 🤖 **AI-powered функции** за персонализирани препоръки
-- 📱 **Responsive design** за всички устройства
+- 🚀 **High performance** with Next.js 15 and Turbopack
+- 🔐 **Secure authentication** with Supabase Auth
+- 🎨 **Modern design** with Tailwind CSS and shadcn/ui
+- 🤖 **AI-powered features** for personalized recommendations
+- 📱 **Responsive design** for all devices
 
 ---
 
-## 🏗️ Архитектура и Технологии
+## 🏗️ Architecture & Technologies
 
 ### Frontend Stack
 
@@ -68,7 +68,7 @@ GymPlanner е модерно уеб приложение за фитнес уп�
 }
 ```
 
-### Архитектурна Диаграма
+### Architecture Diagram
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
